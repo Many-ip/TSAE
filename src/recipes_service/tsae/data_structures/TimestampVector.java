@@ -77,6 +77,12 @@ public class TimestampVector implements Serializable{
 	 * @param tsVector (a timestamp vector)
 	 */
 	public void updateMax(TimestampVector tsVector){   
+		for (Iterator<String> it = tsVector.timestampVector.keySet().iterator(); it.hasNext(); ){
+			String key = it.next();
+			Timestamp t1 = tsVector.timestampVector.get(key);
+			Timestamp t2 = timestampVector.get(key);
+			updateTimestamp(t1.compare(t2) > 0 ? t1 : t2);
+		}
 	}
 	
 	/**
@@ -86,8 +92,7 @@ public class TimestampVector implements Serializable{
 	 * received.
 	 */
 	public Timestamp getLast(String node){
-		// return generated automatically. Remove it when implementing your solution 
-		return null;
+		return timestampVector.get(node);
 	}
 	
 	/**
@@ -97,7 +102,12 @@ public class TimestampVector implements Serializable{
 	 *  @param tsVector (timestamp vector)
 	 */
 	public void mergeMin(TimestampVector tsVector){
-
+		for (Iterator<String> it = tsVector.timestampVector.keySet().iterator(); it.hasNext(); ){
+			String key = it.next();
+			Timestamp t1 = tsVector.timestampVector.get(key);
+			Timestamp t2 = timestampVector.get(key);
+			updateTimestamp(t1.compare(t2) < 0 ? t1 : t2);
+		}
 	}
 	
 	/**
@@ -106,8 +116,13 @@ public class TimestampVector implements Serializable{
 	
 	public TimestampVector clone(){
 		
-		// return generated automatically. Remove it when implementing your solution 
-		return null;
+		TimestampVector timestamp = new TimestampVector(new ArrayList<String>());
+		for (Iterator<String> it = timestampVector.keySet().iterator(); it.hasNext();){
+			String id = it.next();
+			
+			timestamp.timestampVector.put(id, timestampVector.get(id));
+		}
+		return timestamp;
 	}
 	
 	/**

@@ -95,8 +95,22 @@ public class Log implements Serializable{
 	 * @return A list of operations that are newer than the given sum of timestamps.
 	 */
 	public  List<Operation> listNewer(TimestampVector sum){	
-		// return generated automatically. Remove it when implementing your solution 
-		return null;
+		List<Operation> list = new Vector<Operation>();
+		List<String> participants = new Vector<String>(this.log.keySet());
+
+		for (Iterator<String> it = participants.iterator(); it.hasNext(); ){
+			String node = it.next();
+			List<Operation> operations = new Vector<Operation>(this.log.get(node));
+			Timestamp timestampToCompare = sum.getLast(node);
+
+			for (Iterator<Operation> opIt = operations.iterator(); opIt.hasNext(); ) {
+				Operation op = opIt.next();
+				if (op.getTimestamp().compare(timestampToCompare) > 0) {
+					list.add(op);
+				}
+			}
+		}
+		return list;
 	}
 	
 	/**

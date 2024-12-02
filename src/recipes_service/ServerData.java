@@ -156,6 +156,16 @@ public class ServerData {
 		System.err.println("Error: removeRecipe method (recipesService.serverData) not yet implemented");
 	}
 	
+	/*
+	 * manageOperation (Funcion que orquesta que si se agrega o se elimina)
+	 */
+	
+	public synchronized void manageOperation(Operation op) {
+		OperationType type = op.getType();
+		if(type.equals(OperationType.ADD) && type != null) recipes.add(((AddOperation)op).getRecipe());
+		else if(type.equals(OperationType.REMOVE) && type != null) recipes.remove(((RemoveOperation)op).getRecipeTitle());
+	}
+	/*
 	private synchronized void purgeTombstones(){
 		if (ack == null){
 			return;
@@ -170,7 +180,7 @@ public class ServerData {
 		}
 		tombstones = newTombstones;
 	}
-	
+	*/
 	// ****************************************************************************
 	// *** operations to get the TSAE data structures. Used to send to evaluation
 	// ****************************************************************************
