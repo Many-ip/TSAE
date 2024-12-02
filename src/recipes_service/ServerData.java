@@ -159,28 +159,25 @@ public class ServerData {
 	/*
 	 * manageOperation (Funcion que orquesta que si se agrega o se elimina)
 	 */
-	
+
+
 	public synchronized void manageOperation(Operation op) {
-		OperationType type = op.getType();
-		if(type.equals(OperationType.ADD) && type != null) recipes.add(((AddOperation)op).getRecipe());
-		else if(type.equals(OperationType.REMOVE) && type != null) recipes.remove(((RemoveOperation)op).getRecipeTitle());
+		  if (log.add(op)) {
+		   if (op.getType().equals(OperationType.ADD))  recipes.add(((AddOperation)op).getRecipe());
+		       else if (op.getType().equals(OperationType.REMOVE)) recipes.remove(((RemoveOperation)op).getRecipeTitle());
+		  }
 	}
+	
 	/*
-	private synchronized void purgeTombstones(){
-		if (ack == null){
-			return;
-		}
-		TimestampVector sum = ack.minTimestampVector();
-		
-		List<Timestamp> newTombstones = new Vector<Timestamp>();
-		for(int i=0; i<tombstones.size(); i++){
-			if (tombstones.get(i).compare(sum.getLast(tombstones.get(i).getHostid()))>0){
-				newTombstones.add(tombstones.get(i));
-			}
-		}
-		tombstones = newTombstones;
-	}
-	*/
+	 * private synchronized void purgeTombstones(){ if (ack == null){ return; }
+	 * TimestampVector sum = ack.minTimestampVector();
+	 * 
+	 * List<Timestamp> newTombstones = new Vector<Timestamp>(); for(int i=0;
+	 * i<tombstones.size(); i++){ if
+	 * (tombstones.get(i).compare(sum.getLast(tombstones.get(i).getHostid()))>0){
+	 * newTombstones.add(tombstones.get(i)); } } tombstones = newTombstones; }
+	 */
+	
 	// ****************************************************************************
 	// *** operations to get the TSAE data structures. Used to send to evaluation
 	// ****************************************************************************
