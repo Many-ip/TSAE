@@ -155,6 +155,7 @@ public class TSAESessionOriginatorSide extends TimerTask{
 	                    }
 	                    serverData.getSummary().updateMax(partner.getSummary());
 	                    serverData.getAck().updateMax(partner.getAck());
+	                    serverData.getLog().purgeLog(serverData.getAck());
 	                }
 				}
 				socket.close();
