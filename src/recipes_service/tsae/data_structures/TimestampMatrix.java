@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -53,14 +54,22 @@ public class TimestampMatrix implements Serializable{
 	TimestampVector getTimestampVector(String node){
 		
 		// return generated automatically. Remove it when implementing your solution 
-		return null;
+		return timestampMatrix.get(node);
 	}
 	
 	/**
 	 * Merges two timestamp matrix taking the elementwise maximum
 	 * @param tsMatrix
 	 */
-	public void updateMax(TimestampMatrix tsMatrix){
+	public synchronized void updateMax(TimestampMatrix tsMatrix){
+		TimestampVector timestampV;
+		String key;
+		for(Map.Entry<String, TimestampVector> tsKey:tsMatrix.timestampMatrix.entrySet()){
+			key = tsKey.getKey();
+			timestampV = tsKey.getValue();
+			TimestampVector timestampV2 = this.timestampMatrix.get(key);
+			if(timestampV2 != null) timestampV2.updateMax(timestampV);
+		}
 	}
 	
 	/**
@@ -68,7 +77,8 @@ public class TimestampMatrix implements Serializable{
 	 * @param node
 	 * @param tsVector
 	 */
-	public void update(String node, TimestampVector tsVector){
+	public synchronized void update(String node, TimestampVector tsVector){
+		this.timestampMatrix.put(node, tsVector);
 	}
 	
 	/**
@@ -77,18 +87,26 @@ public class TimestampMatrix implements Serializable{
 	 * the timestamp known by all participants
 	 */
 	public TimestampVector minTimestampVector(){
-
-		// return generated automatically. Remove it when implementing your solution 
-		return null;
+		TimestampVector min = null;	
+		
+		for (Iterator<String> it = timestampMatrix.keySet().iterator(); it.hasNext(); ){
+			String node = it.next();
+			
+			if (min == null) min = timestampMatrix.get(node).clone();
+			else min.mergeMin(timestampMatrix.get(node));
+			
+		}
+		return min;
 	}
 	
 	/**
 	 * clone
 	 */
-	public TimestampMatrix clone(){
-
-		// return generated automatically. Remove it when implementing your solution 
-		return null;
+	public synchronized  TimestampMatrix clone(){
+		TimestampMatrix clone = this;  
+	    clone.timestampMatrix = new ConcurrentHashMap<>(this.timestampMatrix); 
+	    return clone;
+		
 	}
 	
 	/**
@@ -96,9 +114,16 @@ public class TimestampMatrix implements Serializable{
 	 */
 	@Override
 	public boolean equals(Object obj) {
-
-		// return generated automatically. Remove it when implementing your solution 
-		return false;
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
+		
+		TimestampMatrix other = (TimestampMatrix) obj;
+		
+		if (other == null) {
+			if (other.timestampMatrix != null) return false;
+		} else if (!other.timestampMatrix .equals(other.timestampMatrix )) return false;
+		return this.timestampMatrix .equals(other.timestampMatrix );
 	}
 
 	
