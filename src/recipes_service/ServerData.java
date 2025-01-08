@@ -170,8 +170,7 @@ public class ServerData {
 	public synchronized void manageOperation(Operation op) {
 		  if (log.add(op)) {
 		   if (op.getType().equals(OperationType.ADD))  recipes.add(((AddOperation)op).getRecipe());
-		       else if (op.getType().equals(OperationType.REMOVE)) recipes.remove(((RemoveOperation)op).getRecipeTitle());
-		  }
+		  }else if (op.getType().equals(OperationType.REMOVE)) recipes.remove(((RemoveOperation)op).getRecipeTitle());
 	}
 	
 	/*
