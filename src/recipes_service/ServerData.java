@@ -155,11 +155,17 @@ public class ServerData {
 	public synchronized void removeRecipe(String recipeTitle){
 		//System.err.println("Error: removeRecipe method (recipesService.serverData) not yet implemented");
 		Timestamp timestamp = nextTimestamp();
-				
-		Operation op = new RemoveOperation(recipeTitle, this.recipes.get(recipeTitle).getTimestamp(), timestamp);
+		
+		System.out.println("Buscando para eliminar: " + recipeTitle);
+		Recipe rcpe = this.recipes.get(recipeTitle);
+		
+		if(rcpe==null) System.err.println("Error: Receta '" + recipeTitle + "' no existe.");
+		
+		Operation op = new RemoveOperation(recipeTitle, rcpe.getTimestamp(), timestamp);
 		this.log.add(op);
 		this.summary.updateTimestamp(timestamp);
 		this.recipes.remove(recipeTitle);
+	}
 	}
 	
 	/*
@@ -170,7 +176,8 @@ public class ServerData {
 	public synchronized void manageOperation(Operation op) {
 		  if (log.add(op)) {
 		   if (op.getType().equals(OperationType.ADD))  recipes.add(((AddOperation)op).getRecipe());
-		  }else if (op.getType().equals(OperationType.REMOVE)) recipes.remove(((RemoveOperation)op).getRecipeTitle());
+		   else if (op.getType().equals(OperationType.REMOVE)) recipes.remove(((RemoveOperation)op).getRecipeTitle());
+		  }
 	}
 	
 	/*
