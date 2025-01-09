@@ -76,7 +76,7 @@ public class TimestampVector implements Serializable{
 	 * merge in another vector, taking the elementwise maximum
 	 * @param tsVector (a timestamp vector)
 	 */
-	public void updateMax(TimestampVector tsVector){   
+	public synchronized void updateMax(TimestampVector tsVector){   
 		for (Iterator<String> it = tsVector.timestampVector.keySet().iterator(); it.hasNext(); ){
 			String key = it.next();
 			Timestamp t1 = tsVector.timestampVector.get(key);
@@ -91,7 +91,7 @@ public class TimestampVector implements Serializable{
 	 * @return the last timestamp issued by node that has been
 	 * received.
 	 */
-	public Timestamp getLast(String node){
+	public synchronized Timestamp getLast(String node){
 		return timestampVector.get(node);
 	}
 	
@@ -101,7 +101,7 @@ public class TimestampVector implements Serializable{
 	 * After merging, local node will have the smallest timestamp for each node.
 	 *  @param tsVector (timestamp vector)
 	 */
-	public void mergeMin(TimestampVector tsVector){
+	public synchronized void mergeMin(TimestampVector tsVector){
 		for (Iterator<String> it = tsVector.timestampVector.keySet().iterator(); it.hasNext(); ){
 			String key = it.next();
 			Timestamp t1 = tsVector.timestampVector.get(key);
@@ -114,7 +114,7 @@ public class TimestampVector implements Serializable{
 	 * clone
 	 */
 	
-	public TimestampVector clone(){
+	public synchronized TimestampVector clone(){
 		
 		TimestampVector timestamp = new TimestampVector(new ArrayList<String>());
 		for (Iterator<String> it = timestampVector.keySet().iterator(); it.hasNext();){
@@ -135,10 +135,7 @@ public class TimestampVector implements Serializable{
 		if (getClass() != obj.getClass()) return false;
 		
 		TimestampVector other = (TimestampVector) obj;
-		
-		if (other == null) {
-			if (other.timestampVector != null) return false;
-		} else if (!other.timestampVector .equals(other.timestampVector )) return false;
+
 		return this.timestampVector .equals(other.timestampVector );
 	}
 

@@ -51,7 +51,7 @@ public class TimestampMatrix implements Serializable{
 	 * @param node
 	 * @return the timestamp vector of node in this timestamp matrix
 	 */
-	TimestampVector getTimestampVector(String node){
+	TimestampVector  getTimestampVector(String node){
 		
 		// return generated automatically. Remove it when implementing your solution 
 		return timestampMatrix.get(node);
@@ -86,7 +86,7 @@ public class TimestampMatrix implements Serializable{
 	 * @return a timestamp vector containing, for each node, 
 	 * the timestamp known by all participants
 	 */
-	public TimestampVector minTimestampVector(){
+	public synchronized TimestampVector minTimestampVector(){
 		TimestampVector min = null;	
 		
 		for (Iterator<String> it = timestampMatrix.keySet().iterator(); it.hasNext(); ){
@@ -120,9 +120,6 @@ public class TimestampMatrix implements Serializable{
 		
 		TimestampMatrix other = (TimestampMatrix) obj;
 		
-		if (other == null) {
-			if (other.timestampMatrix != null) return false;
-		} else if (!other.timestampMatrix .equals(other.timestampMatrix )) return false;
 		return this.timestampMatrix .equals(other.timestampMatrix );
 	}
 

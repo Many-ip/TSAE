@@ -139,16 +139,23 @@ public class Log implements Serializable{
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) return true;
-		if (obj == null) return false;
-		if (getClass() != obj.getClass()) return false;
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
 		
 		Log other = (Log) obj;
 		
-		if (other == null) {
-			if (other.log != null) return false;
-		} else if (!other.log.equals(other.log)) return false;
-		return this.log.equals(other.log);
+		if (this.log == other.log) {
+			return true;
+		} else if (this.log == null || other.log == null) {
+			return false;
+		} else {
+			return this.log.equals(other.log);
+		}
+
 	}
 
 	/**
