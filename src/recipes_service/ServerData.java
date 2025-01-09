@@ -143,17 +143,16 @@ public class ServerData {
 
 		Timestamp timestamp= nextTimestamp();
 		Recipe rcpe = new Recipe(recipeTitle, recipe, id, timestamp);
-		Operation op=new AddOperation(rcpe, timestamp);
+		Operation op = new AddOperation(rcpe, timestamp);
 
 		this.log.add(op);
 		this.summary.updateTimestamp(timestamp);
 		this.recipes.add(rcpe);
-//		LSimLogger.log(Level.TRACE,"The recipe '"+recipeTitle+"' has been added");
+		LSimLogger.log(Level.TRACE,"The recipe '"+recipeTitle+"' has been added");
 
 	}
 	
 	public synchronized void removeRecipe(String recipeTitle){
-		//System.err.println("Error: removeRecipe method (recipesService.serverData) not yet implemented");
 		Timestamp timestamp = nextTimestamp();
 		
 		System.out.println("Buscando para eliminar: " + recipeTitle);
@@ -166,7 +165,6 @@ public class ServerData {
 		this.summary.updateTimestamp(timestamp);
 		this.recipes.remove(recipeTitle);
 	}
-	}
 	
 	/*
 	 * manageOperation (Funcion que orquesta que si se agrega o se elimina)
@@ -174,21 +172,35 @@ public class ServerData {
 
 
 	public synchronized void manageOperation(Operation op) {
-		  if (log.add(op)) {
-		   if (op.getType().equals(OperationType.ADD))  recipes.add(((AddOperation)op).getRecipe());
-		   else if (op.getType().equals(OperationType.REMOVE)) recipes.remove(((RemoveOperation)op).getRecipeTitle());
-		  }
+		if (this.log.add(op)) {
+		   if (op.getType().equals(OperationType.ADD)) {
+			   AddOperation addOp = (AddOperation) op; 
+			   if (!tombstones.contains(addOp.getRecipe().getTimestamp())) {  
+					this.recipes.add(addOp.getRecipe());
+				}
+
+		   }
+		   else if (op.getType().equals(OperationType.REMOVE)) {
+			    String recipeTitleToRemove = ((RemoveOperation) op).getRecipeTitle(); 
+				RemoveOperation rmOp = (RemoveOperation) op; 
+				
+				if(recipes.contains(rmOp.getRecipeTitle())) {
+					this.recipes.remove(recipeTitleToRemove);
+				}else tombstones.add(rmOp.getRecipeTimestamp());
+
+		   }
+		}
 	}
 	
-	/*
-	 * private synchronized void purgeTombstones(){ if (ack == null){ return; }
-	 * TimestampVector sum = ack.minTimestampVector();
-	 * 
-	 * List<Timestamp> newTombstones = new Vector<Timestamp>(); for(int i=0;
-	 * i<tombstones.size(); i++){ if
-	 * (tombstones.get(i).compare(sum.getLast(tombstones.get(i).getHostid()))>0){
-	 * newTombstones.add(tombstones.get(i)); } } tombstones = newTombstones; }
-	 */
+	
+	 private synchronized void purgeTombstones(){ if (ack == null){ return; }
+	 	TimestampVector sum = ack.minTimestampVector();
+	  
+	 	List<Timestamp> newTombstones = new Vector<Timestamp>(); for(int i=0;
+			 i<tombstones.size(); i++){ if
+		 (tombstones.get(i).compare(sum.getLast(tombstones.get(i).getHostid()))>0){
+		 newTombstones.add(tombstones.get(i)); } } tombstones = newTombstones; }
+	 
 	
 	// ****************************************************************************
 	// *** operations to get the TSAE data structures. Used to send to evaluation
