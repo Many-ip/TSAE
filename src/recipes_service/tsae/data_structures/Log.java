@@ -21,6 +21,7 @@
 package recipes_service.tsae.data_structures;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -73,19 +74,16 @@ public class Log implements Serializable{
 	 */
 	public synchronized boolean add(Operation op){
 		// ....
-        String hostId = op.getTimestamp().getHostid();
-        
-        List<Operation> operations = this.log.get(hostId);
-
-        Timestamp lastTS = (operations == null || operations.isEmpty())?null:operations.get(operations.size() - 1).getTimestamp();
-        
-        long differenceTS = op.getTimestamp().compare(lastTS);
-        
-        if ((lastTS == null && differenceTS == 0) || differenceTS == 1) {
-            this.log.get(hostId).add(op);
-            return true;
-        }
-        return false;
+		String hostId = op.getTimestamp().getHostid();
+	    List<Operation> operations = log.getOrDefault(hostId, new ArrayList<>());
+	    Timestamp lastTS = operations.isEmpty() ? null : operations.get(operations.size() - 1).getTimestamp();
+	    long differenceTS = op.getTimestamp().compare(lastTS);
+	    if ((lastTS == null && differenceTS == 0) || differenceTS == 1) {
+	        operations.add(op);
+	        log.put(hostId, operations);
+	        return true;
+	    }
+	    return false;
 	}
 
 	
@@ -95,22 +93,32 @@ public class Log implements Serializable{
 	 * @return A list of operations that are newer than the given sum of timestamps.
 	 */
 	public  List<Operation> listNewer(TimestampVector sum){	
-		List<Operation> list = new Vector<Operation>();
-		List<String> participants = new Vector<String>(this.log.keySet());
-
-		for (Iterator<String> it = participants.iterator(); it.hasNext(); ){
-			String node = it.next();
-			List<Operation> operations = new Vector<Operation>(this.log.get(node));
-			Timestamp timestampToCompare = sum.getLast(node);
-
-			for (Iterator<Operation> opIt = operations.iterator(); opIt.hasNext(); ) {
-				Operation op = opIt.next();
-				if (op.getTimestamp().compare(timestampToCompare) > 0) {
-					list.add(op);
+List<Operation> newerList = new Vector<Operation>();
+		
+		for(ConcurrentHashMap.Entry<String,List<Operation>> entry:log.entrySet() )
+		{
+			String hostId = entry.getKey();
+			List<Operation> messages = entry.getValue(); 
+			if (!messages.isEmpty())
+			{
+				Timestamp last = messages.get(messages.size()-1).getTimestamp();
+				if(last.compare(sum.getLast(hostId))>0)
+				{
+					if(sum.getLast(hostId).isNullTimestamp())
+					{
+						newerList.addAll(messages);
+					}else
+					{		
+						for(Operation op : messages)
+						{
+							if (op.getTimestamp().compare(sum.getLast(hostId))>0)
+								newerList.add(op);
+						}
+					}
 				}
-			}
+			}	
 		}
-		return list;
+		return newerList;
 	}
 	
 	/**
@@ -121,16 +129,13 @@ public class Log implements Serializable{
 	 * @param ack: ackSummary.
 	 */
 	public synchronized void purgeLog(TimestampMatrix ack){
-		List<String> keyList = new Vector<String>(this.log.keySet());
-		TimestampVector timestampVectorMin = ack.minTimestampVector();
-		String nextKey;
-		
-		for(Iterator<String> key = keyList.iterator(); key.hasNext();) {
-			nextKey = key.next();
-			for (Iterator<Operation> ops = log.get(nextKey).iterator();ops.hasNext();) {
-				if(!(timestampVectorMin.getLast(nextKey)== null) && !(ops.next().getTimestamp().compare(timestampVectorMin.getLast(nextKey))>0)) ops.remove();
-			}
-		}
+		TimestampVector minTimestampVector = ack.minTimestampVector();
+	    for (String node : log.keySet()) {
+	        log.computeIfPresent(node, (key, operations) -> {
+	            operations.removeIf(op -> op.getTimestamp().compare(minTimestampVector.getLast(key)) <= 0);
+	            return operations;
+	        });
+	    }
 
 	}
 
@@ -138,7 +143,7 @@ public class Log implements Serializable{
 	 * equals
 	 */
 	@Override
-	public boolean equals(Object obj) {
+	public synchronized boolean equals(Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -148,13 +153,7 @@ public class Log implements Serializable{
 		
 		Log other = (Log) obj;
 		
-		if (this.log == other.log) {
-			return true;
-		} else if (this.log == null || other.log == null) {
-			return false;
-		} else {
-			return this.log.equals(other.log);
-		}
+		return this.log.equals(other.log);
 
 	}
 

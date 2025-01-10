@@ -77,9 +77,9 @@ public class TSAESessionPartnerSide extends Thread{
                 serverData.getAck().update(serverData.getId(), localSummary);
                 localAck = serverData.getAck().clone();
             }
-			
-			msg = (Message) in.readObject();
+            msg = (Message) in.readObject();
 			current_session_number = msg.getSessionNumber();
+			
 			LSimLogger.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] TSAE session");
 			LSimLogger.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
 			if (msg.type() == MsgType.AE_REQUEST){
