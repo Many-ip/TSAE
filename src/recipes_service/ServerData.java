@@ -143,7 +143,7 @@ public class ServerData {
 
 		Timestamp timestamp= nextTimestamp();
 		Recipe rcpe = new Recipe(recipeTitle, recipe, id, timestamp);
-		Operation op = new AddOperation(rcpe, timestamp);
+		Operation op=new AddOperation(rcpe, timestamp);
 
 		this.log.add(op);
 		this.summary.updateTimestamp(timestamp);
@@ -153,24 +153,12 @@ public class ServerData {
 	}
 	
 	public synchronized void removeRecipe(String recipeTitle){
-		Timestamp timestamp = nextTimestamp();
-		
-		System.out.println("Buscando para eliminar: " + recipeTitle);
-		Recipe rcpe = this.recipes.get(recipeTitle);
-		
-		if(rcpe==null) System.err.println("Error: Receta '" + recipeTitle + "' no existe.");
-		
-		Operation op = new RemoveOperation(recipeTitle, rcpe.getTimestamp(), timestamp);
-		this.log.add(op);
-		this.summary.updateTimestamp(timestamp);
-		this.recipes.remove(recipeTitle);
+		System.err.println("Error: removeRecipe method (recipesService.serverData) not yet implemented");
 	}
 	
 	/*
 	 * manageOperation (Funcion que orquesta que si se agrega o se elimina)
 	 */
-
-
 	public synchronized void manageOperation(Operation op) {
 		if (this.log.add(op)) {
 		   if (op.getType().equals(OperationType.ADD)) {
@@ -179,8 +167,7 @@ public class ServerData {
 					this.recipes.add(addOp.getRecipe());
 				}
 
-		   }
-		   else if (op.getType().equals(OperationType.REMOVE)) {
+		   }else if (op.getType().equals(OperationType.REMOVE)) {
 			    String recipeTitleToRemove = ((RemoveOperation) op).getRecipeTitle(); 
 				RemoveOperation rmOp = (RemoveOperation) op; 
 				
@@ -192,15 +179,20 @@ public class ServerData {
 		}
 	}
 	
-	
-	 private synchronized void purgeTombstones(){ if (ack == null){ return; }
-	 	TimestampVector sum = ack.minTimestampVector();
-	  
-	 	List<Timestamp> newTombstones = new Vector<Timestamp>(); for(int i=0;
-			 i<tombstones.size(); i++){ if
-		 (tombstones.get(i).compare(sum.getLast(tombstones.get(i).getHostid()))>0){
-		 newTombstones.add(tombstones.get(i)); } } tombstones = newTombstones; }
-	 
+	private synchronized void purgeTombstones(){
+		if (ack == null){
+			return;
+		}
+		TimestampVector sum = ack.minTimestampVector();
+		
+		List<Timestamp> newTombstones = new Vector<Timestamp>();
+		for(int i=0; i<tombstones.size(); i++){
+			if (tombstones.get(i).compare(sum.getLast(tombstones.get(i).getHostid()))>0){
+				newTombstones.add(tombstones.get(i));
+			}
+		}
+		tombstones = newTombstones;
+	}
 	
 	// ****************************************************************************
 	// *** operations to get the TSAE data structures. Used to send to evaluation
