@@ -21,7 +21,6 @@
 package recipes_service.tsae.data_structures;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -36,99 +35,84 @@ import edu.uoc.dpcs.lsim.logger.LoggerManager.Level;
 import lsim.library.api.LSimLogger;
 
 /**
- * @author Joan-Manuel Marques, Daniel Lázaro Iglesias
- * December 2012
+ * @author Joan-Manuel Marques, Daniel Lázaro Iglesias December 2012
  *
  */
-public class Log implements Serializable{
-	// Only for the zip file with the correct solution of phase1.Needed for the logging system for the phase1. sgeag_2018p 
+public class Log implements Serializable {
+	// Only for the zip file with the correct solution of phase1.Needed for the
+	// logging system for the phase1. sgeag_2018p
 //	private transient LSimCoordinator lsim = LSimFactory.getCoordinatorInstance();
 	// Needed for the logging system sgeag@2017
 //	private transient LSimWorker lsim = LSimFactory.getWorkerInstance();
 
 	private static final long serialVersionUID = -4864990265268259700L;
 	/**
-	 * This class implements a log, that stores the operations
-	 * received  by a client.
-	 * They are stored in a ConcurrentHashMap (a hash table),
-	 * that stores a list of operations for each member of 
-	 * the group.
+	 * This class implements a log, that stores the operations received by a client.
+	 * They are stored in a ConcurrentHashMap (a hash table), that stores a list of
+	 * operations for each member of the group.
 	 */
-	private ConcurrentHashMap<String, List<Operation>> log= new ConcurrentHashMap<String, List<Operation>>();  
+	private ConcurrentHashMap<String, List<Operation>> log = new ConcurrentHashMap<String, List<Operation>>();
 
-	public Log(List<String> participants){
+	public Log(List<String> participants) {
 		// create an empty log
-		for (Iterator<String> it = participants.iterator(); it.hasNext(); ){
+		for (Iterator<String> it = participants.iterator(); it.hasNext();) {
 			log.put(it.next(), new Vector<Operation>());
 		}
 	}
 
 	/**
-	 * inserts an operation into the log. Operations are 
-	 * inserted in order. If the last operation for 
-	 * the user is not the previous operation than the one 
-	 * being inserted, the insertion will fail.
+	 * inserts an operation into the log. Operations are inserted in order. If the
+	 * last operation for the user is not the previous operation than the one being
+	 * inserted, the insertion will fail.
 	 * 
 	 * @param op
 	 * @return true if op is inserted, false otherwise.
 	 */
-	public synchronized boolean add(Operation op){
+	public synchronized boolean add(Operation op) {
 		// ....
 		String hostId = op.getTimestamp().getHostid();
-	    List<Operation> operations = log.getOrDefault(hostId, new ArrayList<>());
-	    Timestamp lastTS = operations.isEmpty() ? null : operations.get(operations.size() - 1).getTimestamp();
-	    long differenceTS = op.getTimestamp().compare(lastTS);
-	    if ((lastTS == null && differenceTS == 0) || differenceTS == 1) {
-	        operations.add(op);
-	        log.put(hostId, operations);
-	        return true;
-	    }
-	    return false;
+		List<Operation> operations = this.log.get(hostId);
+
+		Timestamp lastTS = (operations == null || operations.isEmpty()) ? null
+				: operations.get(operations.size() - 1).getTimestamp();
+
+		long differenceTS = op.getTimestamp().compare(lastTS);
+
+		if ((lastTS == null && differenceTS <= 0) || differenceTS >0) {
+			this.log.get(hostId).add(op);
+			return true;
+		}
+		return false;
 	}
 
-	
-	
 	/**
 	 * @param sum The sum of timestamps to compare against.
 	 * @return A list of operations that are newer than the given sum of timestamps.
 	 */
-	public  List<Operation> listNewer(TimestampVector sum){	
-List<Operation> newerList = new Vector<Operation>();
-		
-		for(ConcurrentHashMap.Entry<String,List<Operation>> entry:log.entrySet() )
-		{
-			String hostId = entry.getKey();
-			List<Operation> messages = entry.getValue(); 
-			if (!messages.isEmpty())
-			{
-				Timestamp last = messages.get(messages.size()-1).getTimestamp();
-				if(last.compare(sum.getLast(hostId))>0)
-				{
-					if(sum.getLast(hostId).isNullTimestamp())
-					{
-						newerList.addAll(messages);
-					}else
-					{		
-						for(Operation op : messages)
-						{
-							if (op.getTimestamp().compare(sum.getLast(hostId))>0)
-								newerList.add(op);
-						}
-					}
+	public synchronized List<Operation> listNewer(TimestampVector sum) {
+		List<Operation> list = new Vector<Operation>();
+		List<String> participants = new Vector<String>(this.log.keySet());
+		for (Iterator<String> it = participants.iterator(); it.hasNext();) {
+			String node = it.next();
+			List<Operation> operations =  this.log.get(node);
+			Timestamp timestampToCompare = sum.getLast(node);
+			for (Iterator<Operation> opIt = operations.iterator(); opIt.hasNext();) {
+				Operation op = opIt.next();
+				if (op.getTimestamp().compare(timestampToCompare) > 0) {
+					list.add(op);
 				}
-			}	
+			}
 		}
-		return newerList;
+		return list;
 	}
-	
+
 	/**
-	 * Removes from the log the operations that have
-	 * been acknowledged by all the members
-	 * of the group, according to the provided
-	 * ackSummary. 
+	 * Removes from the log the operations that have been acknowledged by all the
+	 * members of the group, according to the provided ackSummary.
+	 * 
 	 * @param ack: ackSummary.
 	 */
-	public synchronized void purgeLog(TimestampMatrix ack){
+	public synchronized void purgeLog(TimestampMatrix ack) {
 		TimestampVector minTimestampVector = ack.minTimestampVector();
 	    for (String node : log.keySet()) {
 	        log.computeIfPresent(node, (key, operations) -> {
@@ -136,25 +120,24 @@ List<Operation> newerList = new Vector<Operation>();
 	            return operations;
 	        });
 	    }
-
 	}
 
+	
 	/**
 	 * equals
 	 */
 	@Override
-	public synchronized boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
 		
 		Log other = (Log) obj;
 		
+		if (other == null) {
+			if (other.log != null) return false;
+		} else if (!other.log.equals(other.log)) return false;
 		return this.log.equals(other.log);
-
 	}
 
 	/**
@@ -162,15 +145,14 @@ List<Operation> newerList = new Vector<Operation>();
 	 */
 	@Override
 	public synchronized String toString() {
-		String name="";
-		for(Enumeration<List<Operation>> en=log.elements();
-		en.hasMoreElements(); ){
-		List<Operation> sublog=en.nextElement();
-		for(ListIterator<Operation> en2=sublog.listIterator(); en2.hasNext();){
-			name+=en2.next().toString()+"\n";
+		String name = "";
+		for (Enumeration<List<Operation>> en = log.elements(); en.hasMoreElements();) {
+			List<Operation> sublog = en.nextElement();
+			for (ListIterator<Operation> en2 = sublog.listIterator(); en2.hasNext();) {
+				name += en2.next().toString() + "\n";
+			}
 		}
-	}
-		
+
 		return name;
 	}
 }

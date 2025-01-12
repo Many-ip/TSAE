@@ -76,22 +76,13 @@ public class TimestampVector implements Serializable{
 	 * merge in another vector, taking the elementwise maximum
 	 * @param tsVector (a timestamp vector)
 	 */
-	public synchronized void updateMax(TimestampVector tsVector){   
-		if (tsVector!=null){
-			for (Map.Entry<String, Timestamp> tsVectorEntry : tsVector.timestampVector.entrySet()){
-		        
-				String node = tsVectorEntry.getKey();
-				Timestamp nodeTS = tsVectorEntry.getValue();  
-				Timestamp thisTimestamp = this.getLast(node); 
-            
-				if (thisTimestamp == null){ 
-					this.timestampVector.put(node, nodeTS); 
-				} else if (thisTimestamp.compare(nodeTS) < 0){
-					this.updateTimestamp(nodeTS);
-	            }
-	        }
+	public synchronized void updateMax(TimestampVector tsVector){ 
+		for (Iterator<String> it = tsVector.timestampVector.keySet().iterator(); it.hasNext(); ){
+			String node = it.next();
+			Timestamp t1 = tsVector.timestampVector.get(node);
+			Timestamp t2 = timestampVector.get(node);
+			if(t1.compare(t2) > 0) updateTimestamp(t1);
 		}
-
 	}
 	
 	/**
@@ -111,10 +102,11 @@ public class TimestampVector implements Serializable{
 	 *  @param tsVector (timestamp vector)
 	 */
 	public synchronized void mergeMin(TimestampVector tsVector){
-		for(ConcurrentHashMap.Entry<String, Timestamp> entry : timestampVector.entrySet()){
-			String pid=entry.getKey();
-			if( getLast(pid).compare(tsVector.getLast(pid))>0) timestampVector.put(pid, tsVector.getLast(pid));
-			
+		for (Iterator<String> it = tsVector.timestampVector.keySet().iterator(); it.hasNext(); ){
+			String node = it.next();
+			Timestamp t1 = tsVector.timestampVector.get(node);
+			Timestamp t2 = timestampVector.get(node);
+			if(t1.compare(t2) < 0) updateTimestamp(t1);
 		}
 	}
 	
@@ -123,23 +115,30 @@ public class TimestampVector implements Serializable{
 	 */
 	
 	public synchronized TimestampVector clone(){
-		TimestampVector copy = new TimestampVector(new ArrayList<String>(timestampVector.keySet()));
-		copy.timestampVector.putAll(timestampVector);
-		return copy;
+		TimestampVector clone = new TimestampVector(new ArrayList<String>());
+		for (Iterator<String> it = timestampVector.keySet().iterator(); it.hasNext();){
+			String id = it.next();
+
+			clone.timestampVector.put(id, timestampVector.get(id));
+		}
+		return clone;
 	}
 	
 	/**
 	 * equals
 	 */
 	@Override
-	public synchronized boolean equals(Object obj){
+	public boolean equals(Object obj){
 		if (this == obj) return true;
 		if (obj == null) return false;
 		if (getClass() != obj.getClass()) return false;
 		
 		TimestampVector other = (TimestampVector) obj;
-
-		return this.timestampVector .equals(other.timestampVector );
+		
+		if (other == null) {
+			if (other.timestampVector != null) return false;
+		} else if (!other.timestampVector.equals(other.timestampVector )) return false;
+		return this.timestampVector.equals(other.timestampVector );
 	}
 
 	/**

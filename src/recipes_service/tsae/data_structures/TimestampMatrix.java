@@ -52,8 +52,7 @@ public class TimestampMatrix implements Serializable{
 	 * @param node
 	 * @return the timestamp vector of node in this timestamp matrix
 	 */
-	public synchronized TimestampVector  getTimestampVector(String node){
-		// return generated automatically. Remove it when implementing your solution 
+	TimestampVector getTimestampVector(String node){
 		return timestampMatrix.get(node);
 	}
 	
@@ -62,9 +61,15 @@ public class TimestampMatrix implements Serializable{
 	 * @param tsMatrix
 	 */
 	public synchronized void updateMax(TimestampMatrix tsMatrix){
-		for(ConcurrentHashMap.Entry<String,TimestampVector> entry: timestampMatrix.entrySet()){
-			String name=entry.getKey();
-			timestampMatrix.get(name).updateMax(tsMatrix.getTimestampVector(name));
+		TimestampVector valueTs;
+		String key;
+		for(Map.Entry<String, TimestampVector> tsKey:tsMatrix.timestampMatrix.entrySet()){
+			key = tsKey.getKey();
+			valueTs = tsKey.getValue();
+			TimestampVector thisValueTs = this.timestampMatrix.get(key);
+			if(thisValueTs != null) {
+				thisValueTs.updateMax(valueTs);
+			}
 		}
 	}
 	
@@ -74,7 +79,7 @@ public class TimestampMatrix implements Serializable{
 	 * @param tsVector
 	 */
 	public synchronized void update(String node, TimestampVector tsVector){
-		timestampMatrix.put(node, tsVector);
+		this.timestampMatrix.put(node, tsVector);
 	}
 	
 	/**
@@ -83,47 +88,40 @@ public class TimestampMatrix implements Serializable{
 	 * the timestamp known by all participants
 	 */
 	public synchronized TimestampVector minTimestampVector(){
-		TimestampVector min;
-		
-		Enumeration <TimestampVector> en = timestampMatrix.elements();
-		min = en.nextElement().clone();
-				
-		while(en.hasMoreElements()){
-			TimestampVector tsv=en.nextElement().clone();
-			min.mergeMin(tsv);
-		}
-		
-		return min;
+		TimestampVector min = null;
+        for (TimestampVector vector : timestampMatrix.values()) {
+            if (min == null) min = vector.clone();
+            else min.mergeMin(vector);
+        }
+        return min;
 	}
 	
 	/**
 	 * clone
 	 */
-	public synchronized  TimestampMatrix clone(){
-		TimestampMatrix clone = new TimestampMatrix(new ArrayList<String>(timestampMatrix.keySet()));
-		for(ConcurrentHashMap.Entry<String,TimestampVector> entry : timestampMatrix.entrySet())
-		{
-			String key = entry.getKey();
-			TimestampVector timestampV = entry.getValue().clone();
-			clone.timestampMatrix.put(key, timestampV);
-			
-		}
-		return clone;
-		
+	public synchronized TimestampMatrix clone(){
+		 TimestampMatrix clone = new TimestampMatrix(new ArrayList<>(timestampMatrix.keySet()));
+	        for (Map.Entry<String, TimestampVector> entry : timestampMatrix.entrySet()) {
+	            clone.timestampMatrix.put(entry.getKey(), entry.getValue().clone());
+	        }
+	        return clone;
 	}
 	
 	/**
 	 * equals
 	 */
 	@Override
-	public synchronized boolean equals(Object obj) {
+	public boolean equals(Object obj) {
 		if (this == obj) return true;
 		if (obj == null) return false;
 		if (getClass() != obj.getClass()) return false;
 		
 		TimestampMatrix other = (TimestampMatrix) obj;
 		
-		return this.timestampMatrix .equals(other.timestampMatrix );
+		if (other == null) {
+			if (other.timestampMatrix != null) return false;
+		} else if (!other.timestampMatrix.equals(other.timestampMatrix )) return false;
+		return this.timestampMatrix.equals(other.timestampMatrix );
 	}
 
 	
